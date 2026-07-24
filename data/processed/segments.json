@@ -1,0 +1,82 @@
+{
+  "weather_breach_rate": {
+    "Fog": 35.1,
+    "Cloudy": 34.8,
+    "Windy": 19.4,
+    "Sandstorms": 19.2,
+    "Stormy": 18.7,
+    "Sunny": 9.6
+  },
+  "segment_table": [
+    {
+      "segment": "Urban \u00b7 Jam traffic",
+      "n": 2554,
+      "avg_delay": 132,
+      "breach_rate": 41.8,
+      "risk": "High"
+    },
+    {
+      "segment": "Metropolitan \u00b7 Jam traffic",
+      "n": 10749,
+      "avg_delay": 151,
+      "breach_rate": 40.0,
+      "risk": "High"
+    },
+    {
+      "segment": "Other \u00b7 Jam traffic",
+      "n": 281,
+      "avg_delay": 119,
+      "breach_rate": 35.9,
+      "risk": "High"
+    },
+    {
+      "segment": "Other \u00b7 Medium traffic",
+      "n": 251,
+      "avg_delay": 111,
+      "breach_rate": 28.3,
+      "risk": "Moderate"
+    },
+    {
+      "segment": "Urban \u00b7 High traffic",
+      "n": 914,
+      "avg_delay": 115,
+      "breach_rate": 28.2,
+      "risk": "Moderate"
+    },
+    {
+      "segment": "Urban \u00b7 Medium traffic",
+      "n": 2281,
+      "avg_delay": 113,
+      "breach_rate": 26.0,
+      "risk": "Moderate"
+    },
+    {
+      "segment": "Metropolitan \u00b7 Medium traffic",
+      "n": 8072,
+      "avg_delay": 131,
+      "breach_rate": 23.4,
+      "risk": "Moderate"
+    },
+    {
+      "segment": "Metropolitan \u00b7 High traffic",
+      "n": 3269,
+      "avg_delay": 133,
+      "breach_rate": 19.3,
+      "risk": "Moderate"
+    },
+    {
+      "segment": "Other \u00b7 Low traffic",
+      "n": 508,
+      "avg_delay": 92,
+      "breach_rate": 9.6,
+      "risk": "Low"
+    },
+    {
+      "segment": "Urban \u00b7 Low traffic",
+      "n": 3966,
+      "avg_delay": 92,
+      "breach_rate": 7.1,
+      "risk": "Low"
+    }
+  ]
+}

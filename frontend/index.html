@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predictive Ops Dashboard</title>
+<style>
+  :root {
+    --bg: #F7F7F5; --surface: #FFFFFF; --surface-alt: #F0F0EE;
+    --border: rgba(11,11,11,0.10); --border-strong: rgba(11,11,11,0.18);
+    --text-primary: #14140F; --text-secondary: #5A594F; --text-muted: #93927F;
+    --good: #1D6B3E; --good-light: #E4F0E8;
+    --neutral: #14140F;
+    --bad: #B23B2E; --bad-light: #F7E7E4;
+    --radius: 10px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--bg); color: var(--text-primary); font-family: var(--font-body); padding: 2.5rem 3rem 5rem; }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .masthead { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border-strong); }
+  .masthead h1 { font-family: var(--font-display); font-weight:500; font-size:28px; margin:0 0 4px; letter-spacing:-0.01em; }
+  .masthead p { margin:0; color:var(--text-secondary); font-size:14px; }
+  .provenance { text-align:right; font-size:12px; color:var(--text-muted); font-family:var(--font-mono); line-height:1.6; }
+  .tabs { display:flex; gap:4px; margin-bottom:2rem; }
+  .tab { font-family: var(--font-body); font-size:14px; font-weight:500; padding:9px 16px; border-radius:999px; border:1px solid transparent; background:transparent; color:var(--text-secondary); cursor:pointer; }
+  .tab.active { background:var(--surface); border-color:var(--border-strong); color:var(--text-primary); }
+  .tab:hover:not(.active) { color:var(--text-primary); }
+  .panel { display:none; }
+  .panel.active { display:block; animation: fade .25s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:1.75rem; }
+  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem 1.25rem; }
+  .kpi .label { font-size:12.5px; color:var(--text-muted); margin:0 0 8px; text-transform:uppercase; letter-spacing:0.04em; }
+  .kpi .value { font-family: var(--font-display); font-size:30px; font-weight:600; margin:0; letter-spacing:-0.01em; }
+  .kpi .value.good { color:var(--good); } .kpi .value.bad { color:var(--bad); } .kpi .value.neutral { color:var(--neutral); }
+  .kpi .delta { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; margin-bottom:1.25rem; }
+  .card h3 { font-family: var(--font-body); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); margin:0 0 1rem; }
+  .chart-box { position:relative; height:240px; }
+  .chart-box.small { height:160px; }
+  .legend-row { display:flex; gap:16px; font-size:12px; color:var(--text-secondary); margin-bottom:10px; }
+  .legend-row span { display:flex; align-items:center; gap:5px; }
+  .dot { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--text-muted); font-weight:500; text-transform:uppercase; font-size:11px; letter-spacing:0.03em; }
+  td.num, th.num { text-align:right; font-family:var(--font-mono); }
+  td.num.bad { color:var(--bad); font-weight:600; } td.num.good { color:var(--good); font-weight:600; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:600; }
+  .pill.High { background:var(--bad-light); color:var(--bad); }
+  .pill.Moderate { background:var(--surface-alt); color:var(--neutral); }
+  .pill.Low { background:var(--good-light); color:var(--good); }
+  .objective-toggle { display:flex; align-items:center; gap:10px; margin-bottom:1.5rem; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .objective-toggle label { font-size:13px; color:var(--text-secondary); }
+  .objective-toggle select { font-family: var(--font-body); font-size:14px; font-weight:500; padding:6px 10px; border-radius:6px; border:1px solid var(--border-strong); background:var(--surface-alt); }
+  .insight { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--text-muted); border-radius:0 var(--radius) var(--radius) 0; padding:1rem 1.25rem; margin-bottom:12px; }
+  .insight.top { border-left:4px solid var(--bad); background: var(--bad-light); padding:1.25rem 1.5rem; }
+  .insight .rank { font-family: var(--font-mono); font-size:11px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .insight.top .rank { color: var(--bad); }
+  .badge-top { background:var(--bad); color:#fff; font-family:var(--font-body); font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:0.03em; }
+  .insight .finding { font-size:14.5px; line-height:1.55; margin:0 0 8px; }
+  .insight.top .finding { font-size:15.5px; }
+  .insight .finding b { font-weight:700; color: var(--text-primary); }
+  .insight .impact { font-size:12.5px; color:var(--text-secondary); font-family:var(--font-mono); }
+  .insight.top .impact { font-weight:600; color: var(--bad); }
+  .forecast-note { font-size:13px; color:var(--text-secondary); background:var(--surface-alt); border-radius:var(--radius); padding:12px 16px; margin-bottom:1.25rem; line-height:1.6; }
+  .caption { font-size:12px; color:var(--text-muted); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div>
+      <h1>Predictive operations analytics</h1>
+      <p>Last-mile delivery performance &middot; risk modelling &middot; prioritised recommendations</p>
+    </div>
+    <div class="provenance" id="provenance"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="segments">Segments</button>
+    <button class="tab" data-tab="insights">Insights &amp; recommendations</button>
+    <button class="tab" data-tab="forecast">Risk forecast</button>
+  </div>
+
+  <div class="panel active" id="overview">
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Breach rate by area</h3>
+        <div class="chart-box"><canvas id="areaChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Breach rate trend, weekly</h3>
+        <div class="chart-box"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+    <p class="caption" id="modelCaption"></p>
+  </div>
+
+  <div class="panel" id="segments">
+    <div class="card">
+      <h3>Breach rate by weather condition</h3>
+      <div class="legend-row">
+        <span><i class="dot" style="background:#1D6B3E"></i>Low (&lt;10%)</span>
+        <span><i class="dot" style="background:#14140F"></i>Moderate (10&ndash;20%)</span>
+        <span><i class="dot" style="background:#B23B2E"></i>High (&gt;20%)</span>
+      </div>
+      <div class="chart-box"><canvas id="weatherChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Highest-risk segments (Area &times; Traffic)</h3>
+      <table id="segTable"></table>
+    </div>
+  </div>
+
+  <div class="panel" id="insights">
+    <div class="objective-toggle">
+      <label for="objective">Optimise recommendations for:</label>
+      <select id="objective">
+        <option value="customer_satisfaction">Customer satisfaction</option>
+        <option value="cost_reduction">Cost reduction</option>
+      </select>
+    </div>
+    <div id="insightsList"></div>
+  </div>
+
+  <div class="panel" id="forecast">
+    <div class="card">
+      <h3>Breach risk by weekday</h3>
+      <div class="chart-box"><canvas id="weekdayChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Holiday vs non-holiday</h3>
+      <div class="chart-box small"><canvas id="holidayChart"></canvas></div>
+      <div class="forecast-note" id="holidayNote"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+
+const DATA = {
+  kpis: {"on_time_rate": 77.1, "avg_delay_min": 124.9, "sla_breach_rate": 22.9, "total_deliveries": 43594, "date_range": "2022-02-11 to 2022-04-06", "model_accuracy": 85.9, "model_f1_breach_class": 0.739, "breach_by_area": {"Metropolitan": 23.0, "Other": 22.4, "Semi-Urban": 25.0, "Urban": 22.7}, "weekly_breach_trend": [19.2, 26.8, 22.4, 20.8, 25.5, 22.8, 20.7, 26.1]},
+  segments: {"weather_breach_rate": {"Fog": 35.1, "Cloudy": 34.8, "Windy": 19.4, "Sandstorms": 19.2, "Stormy": 18.7, "Sunny": 9.6}, "segment_table": [{"segment": "Urban \u00b7 Jam traffic", "n": 2554, "avg_delay": 132, "breach_rate": 41.8, "risk": "High"}, {"segment": "Metropolitan \u00b7 Jam traffic", "n": 10749, "avg_delay": 151, "breach_rate": 40.0, "risk": "High"}, {"segment": "Other \u00b7 Jam traffic", "n": 281, "avg_delay": 119, "breach_rate": 35.9, "risk": "High"}, {"segment": "Other \u00b7 Medium traffic", "n": 251, "avg_delay": 111, "breach_rate": 28.3, "risk": "Moderate"}, {"segment": "Urban \u00b7 High traffic", "n": 914, "avg_delay": 115, "breach_rate": 28.2, "risk": "Moderate"}, {"segment": "Urban \u00b7 Medium traffic", "n": 2281, "avg_delay": 113, "breach_rate": 26.0, "risk": "Moderate"}, {"segment": "Metropolitan \u00b7 Medium traffic", "n": 8072, "avg_delay": 131, "breach_rate": 23.4, "risk": "Moderate"}, {"segment": "Metropolitan \u00b7 High traffic", "n": 3269, "avg_delay": 133, "breach_rate": 19.3, "risk": "Moderate"}, {"segment": "Other \u00b7 Low traffic", "n": 508, "avg_delay": 92, "breach_rate": 9.6, "risk": "Low"}, {"segment": "Urban \u00b7 Low traffic", "n": 3966, "avg_delay": 92, "breach_rate": 7.1, "risk": "Low"}]},
+  insights: {
+    customer_satisfaction: [{"rank": 1, "top_priority": true, "dimension": "Agent_Rating", "segment": "3.0-4.0", "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.", "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected", "n": 2298, "breach_rate": 64.1, "breach_lift_pct": 180.0}, {"rank": 2, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Fog + Jam", "finding": "Fog weather combined with Jam traffic shows a **174% higher** breach rate than average (62.7% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.", "impact": "estimated impact: -40pp breach rate \u00b7 2,364 deliveries/period affected", "n": 2364, "breach_rate": 62.7, "breach_lift_pct": 173.6}, {"rank": 3, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Cloudy + Jam", "finding": "Cloudy weather combined with Jam traffic shows a **170% higher** breach rate than average (61.8% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.", "impact": "estimated impact: -39pp breach rate \u00b7 2,261 deliveries/period affected", "n": 2261, "breach_rate": 61.8, "breach_lift_pct": 169.9}, {"rank": 4, "top_priority": false, "dimension": "Traffic", "segment": "Jam", "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected", "n": 13710, "breach_rate": 40.1, "breach_lift_pct": 75.1}, {"rank": 5, "top_priority": false, "dimension": "Traffic", "segment": "Low", "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.", "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected", "n": 14976, "breach_rate": 6.7, "breach_lift_pct": -70.7}, {"rank": 6, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Stormy + Low", "finding": "Stormy weather combined with Low traffic shows a **93% lower** breach rate than average (1.6% vs 22.9% baseline). No buffer adjustment needed; this combination consistently outperforms baseline.", "impact": "estimated impact: +21pp breach rate \u00b7 2,613 deliveries/period affected", "n": 2613, "breach_rate": 1.6, "breach_lift_pct": -93.0}],
+    cost_reduction: [{"rank": 1, "top_priority": true, "dimension": "Vehicle", "segment": "motorcycle", "finding": "Vehicle = motorcycle shows a **16% higher** breach rate than average (26.5% vs 22.9% baseline). Add a **58% buffer** for this segment.", "impact": "estimated impact: -4pp breach rate \u00b7 25,486 deliveries/period affected", "n": 25486, "breach_rate": 26.5, "breach_lift_pct": 15.6}, {"rank": 2, "top_priority": false, "dimension": "Agent_Rating", "segment": "4.5-4.8", "finding": "Agents rated **4.5-4.8** show a **37% lower** breach rate than average (14.4% vs 22.9% baseline). No action needed; this rating band performs at or above target.", "impact": "estimated impact: +9pp breach rate \u00b7 21,230 deliveries/period affected", "n": 21230, "breach_rate": 14.4, "breach_lift_pct": -37.2}, {"rank": 3, "top_priority": false, "dimension": "Traffic", "segment": "Low", "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.", "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected", "n": 14976, "breach_rate": 6.7, "breach_lift_pct": -70.7}, {"rank": 4, "top_priority": false, "dimension": "Traffic", "segment": "Jam", "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected", "n": 13710, "breach_rate": 40.1, "breach_lift_pct": 75.1}, {"rank": 5, "top_priority": false, "dimension": "Agent_Rating", "segment": "3.0-4.0", "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.", "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected", "n": 2298, "breach_rate": 64.1, "breach_lift_pct": 180.0}, {"rank": 6, "top_priority": false, "dimension": "Area x Traffic", "segment": "Metropolitan + Jam", "finding": "Metropolitan deliveries during Jam traffic show a **75% higher** breach rate than average (40.0% vs 22.9% baseline). Add a **42% buffer** for routes in this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 10,749 deliveries/period affected", "n": 10749, "breach_rate": 40.0, "breach_lift_pct": 74.5}]
+  },
+  forecast: {"weekday_breach_rate": {"Monday": 22.9, "Tuesday": 19.4, "Wednesday": 28.7, "Thursday": 18.5, "Friday": 24.5, "Saturday": 22.5, "Sunday": 22.9}, "holiday_vs_non_holiday": {"non_holiday": 22.9, "holiday": 23.7}, "holiday_note": "Only 2 public holidays fall within this dataset's 2022-02-11 to 2022-04-06 window (1 March 2022 (Maha Shivaratri), 18 March 2022 (Holi)), landing on Tuesdays and Fridays only. Holiday effect (23.7% vs 22.9% breach rate) is directional, not statistically robust given the small sample (1999 holiday-flagged rows).", "highest_risk_day": "Wednesday", "lowest_risk_day": "Thursday"}
+};
+
+</script>
+<script>
+  const muted='#93927F', grid='#E7E6DF', good='#1D6B3E', neutral='#14140F', bad='#B23B2E';
+  const tierColor = v => v > 20 ? bad : v < 10 ? good : neutral;
+
+  document.getElementById('provenance').innerHTML =
+    `DATASET: real, historical (Kaggle)<br>MODE: static analysis, not live<br>${DATA.kpis.date_range} &middot; ${DATA.kpis.total_deliveries.toLocaleString()} deliveries`;
+
+  // KPI cards
+  const k = DATA.kpis;
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><p class="label">On-time rate</p><p class="value good">${k.on_time_rate}%</p><p class="delta">of all deliveries</p></div>
+    <div class="kpi"><p class="label">Avg delay</p><p class="value neutral">${Math.round(k.avg_delay_min)} min</p><p class="delta">mean delivery time</p></div>
+    <div class="kpi"><p class="label">SLA breach rate</p><p class="value bad">${k.sla_breach_rate}%</p><p class="delta">75th percentile threshold, per area</p></div>
+    <div class="kpi"><p class="label">Deliveries analysed</p><p class="value neutral">${k.total_deliveries.toLocaleString()}</p><p class="delta">${k.date_range}</p></div>
+  `;
+  document.getElementById('modelCaption').textContent =
+    `Delay-risk model: ${k.model_accuracy}% accuracy, ${k.model_f1_breach_class} F1 on breach class (87% recall, 64% precision, tuned to catch real breaches over minimising false alarms).`;
+
+  // Overview charts
+  const areaLabels = Object.keys(k.breach_by_area);
+  const areaVals = Object.values(k.breach_by_area);
+  new Chart(document.getElementById('areaChart'), {
+    type:'bar', data:{ labels:areaLabels, datasets:[{ data:areaVals, backgroundColor:areaVals.map(tierColor), borderRadius:4, maxBarThickness:44 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+  });
+  new Chart(document.getElementById('trendChart'), {
+    type:'line', data:{ labels:k.weekly_breach_trend.map((_,i)=>'Week '+(i+1)),
+      datasets:[{ data:k.weekly_breach_trend, borderColor:neutral, backgroundColor:'rgba(20,20,15,0.06)', fill:true, tension:.35, pointRadius:0, borderWidth:2 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+  });
+
+  // Segments tab
+  const wLabels = Object.keys(DATA.segments.weather_breach_rate);
+  const wVals = Object.values(DATA.segments.weather_breach_rate);
+  new Chart(document.getElementById('weatherChart'), {
+    type:'bar', data:{ labels:wLabels, datasets:[{ data:wVals, backgroundColor:wVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+  });
+  const segRows = DATA.segments.segment_table.map(r => `
+    <tr><td>${r.segment}</td><td class="num">${r.n.toLocaleString()}</td>
+    <td class="num ${r.avg_delay>140?'bad':''}">${r.avg_delay} min</td>
+    <td class="num ${r.breach_rate>30?'bad':r.breach_rate<10?'good':''}">${r.breach_rate}%</td>
+    <td><span class="pill ${r.risk}">${r.risk}</span></td></tr>`).join('');
+  document.getElementById('segTable').innerHTML = `
+    <thead><tr><th>Segment</th><th class="num">Deliveries</th><th class="num">Avg delay</th><th class="num">Breach rate</th><th>Risk</th></tr></thead>
+    <tbody>${segRows}</tbody>`;
+
+  // Insights tab
+  function renderInsights(objective) {
+    const list = DATA.insights[objective];
+    document.getElementById('insightsList').innerHTML = list.map(item => `
+      <div class="insight ${item.top_priority ? 'top' : ''}">
+        <p class="rank">#${item.rank} ${item.top_priority ? '<span class="badge-top">Top priority</span>' : ''}</p>
+        <p class="finding">${item.finding.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</p>
+        <p class="impact">${item.impact}</p>
+      </div>`).join('');
+  }
+  document.getElementById('objective').addEventListener('change', e => renderInsights(e.target.value));
+  renderInsights('customer_satisfaction');
+
+  // Forecast tab
+  const f = DATA.forecast;
+  const wdLabels = Object.keys(f.weekday_breach_rate);
+  const wdVals = Object.values(f.weekday_breach_rate);
+  new Chart(document.getElementById('weekdayChart'), {
+    type:'bar', data:{ labels:wdLabels, datasets:[{ data:wdVals, backgroundColor:wdVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+  });
+  new Chart(document.getElementById('holidayChart'), {
+    type:'bar', data:{ labels:['Non-holiday','Holiday'],
+      datasets:[{ data:[f.holiday_vs_non_holiday.non_holiday, f.holiday_vs_non_holiday.holiday], backgroundColor:[neutral, bad], borderRadius:4, maxBarThickness:60 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, y:{ticks:{color:muted}, grid:{display:false}} } }
+  });
+  document.getElementById('holidayNote').textContent = f.holiday_note;
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

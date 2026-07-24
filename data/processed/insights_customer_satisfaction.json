@@ -1,0 +1,68 @@
+[
+  {
+    "rank": 1,
+    "top_priority": true,
+    "dimension": "Agent_Rating",
+    "segment": "3.0-4.0",
+    "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.",
+    "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected",
+    "n": 2298,
+    "breach_rate": 64.1,
+    "breach_lift_pct": 180.0
+  },
+  {
+    "rank": 2,
+    "top_priority": false,
+    "dimension": "Weather x Traffic",
+    "segment": "Fog + Jam",
+    "finding": "Fog weather combined with Jam traffic shows a **174% higher** breach rate than average (62.7% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.",
+    "impact": "estimated impact: -40pp breach rate \u00b7 2,364 deliveries/period affected",
+    "n": 2364,
+    "breach_rate": 62.7,
+    "breach_lift_pct": 173.6
+  },
+  {
+    "rank": 3,
+    "top_priority": false,
+    "dimension": "Weather x Traffic",
+    "segment": "Cloudy + Jam",
+    "finding": "Cloudy weather combined with Jam traffic shows a **170% higher** breach rate than average (61.8% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.",
+    "impact": "estimated impact: -39pp breach rate \u00b7 2,261 deliveries/period affected",
+    "n": 2261,
+    "breach_rate": 61.8,
+    "breach_lift_pct": 169.9
+  },
+  {
+    "rank": 4,
+    "top_priority": false,
+    "dimension": "Traffic",
+    "segment": "Jam",
+    "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.",
+    "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected",
+    "n": 13710,
+    "breach_rate": 40.1,
+    "breach_lift_pct": 75.1
+  },
+  {
+    "rank": 5,
+    "top_priority": false,
+    "dimension": "Traffic",
+    "segment": "Low",
+    "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.",
+    "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected",
+    "n": 14976,
+    "breach_rate": 6.7,
+    "breach_lift_pct": -70.7
+  },
+  {
+    "rank": 6,
+    "top_priority": false,
+    "dimension": "Weather x Traffic",
+    "segment": "Stormy + Low",
+    "finding": "Stormy weather combined with Low traffic shows a **93% lower** breach rate than average (1.6% vs 22.9% baseline). No buffer adjustment needed; this combination consistently outperforms baseline.",
+    "impact": "estimated impact: +21pp breach rate \u00b7 2,613 deliveries/period affected",
+    "n": 2613,
+    "breach_rate": 1.6,
+    "breach_lift_pct": -93.0
+  }
+]

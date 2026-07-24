@@ -1,0 +1,68 @@
+[
+  {
+    "rank": 1,
+    "top_priority": true,
+    "dimension": "Vehicle",
+    "segment": "motorcycle",
+    "finding": "Vehicle = motorcycle shows a **16% higher** breach rate than average (26.5% vs 22.9% baseline). Add a **58% buffer** for this segment.",
+    "impact": "estimated impact: -4pp breach rate \u00b7 25,486 deliveries/period affected",
+    "n": 25486,
+    "breach_rate": 26.5,
+    "breach_lift_pct": 15.6
+  },
+  {
+    "rank": 2,
+    "top_priority": false,
+    "dimension": "Agent_Rating",
+    "segment": "4.5-4.8",
+    "finding": "Agents rated **4.5-4.8** show a **37% lower** breach rate than average (14.4% vs 22.9% baseline). No action needed; this rating band performs at or above target.",
+    "impact": "estimated impact: +9pp breach rate \u00b7 21,230 deliveries/period affected",
+    "n": 21230,
+    "breach_rate": 14.4,
+    "breach_lift_pct": -37.2
+  },
+  {
+    "rank": 3,
+    "top_priority": false,
+    "dimension": "Traffic",
+    "segment": "Low",
+    "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.",
+    "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected",
+    "n": 14976,
+    "breach_rate": 6.7,
+    "breach_lift_pct": -70.7
+  },
+  {
+    "rank": 4,
+    "top_priority": false,
+    "dimension": "Traffic",
+    "segment": "Jam",
+    "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.",
+    "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected",
+    "n": 13710,
+    "breach_rate": 40.1,
+    "breach_lift_pct": 75.1
+  },
+  {
+    "rank": 5,
+    "top_priority": false,
+    "dimension": "Agent_Rating",
+    "segment": "3.0-4.0",
+    "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.",
+    "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected",
+    "n": 2298,
+    "breach_rate": 64.1,
+    "breach_lift_pct": 180.0
+  },
+  {
+    "rank": 6,
+    "top_priority": false,
+    "dimension": "Area x Traffic",
+    "segment": "Metropolitan + Jam",
+    "finding": "Metropolitan deliveries during Jam traffic show a **75% higher** breach rate than average (40.0% vs 22.9% baseline). Add a **42% buffer** for routes in this segment.",
+    "impact": "estimated impact: -17pp breach rate \u00b7 10,749 deliveries/period affected",
+    "n": 10749,
+    "breach_rate": 40.0,
+    "breach_lift_pct": 74.5
+  }
+]

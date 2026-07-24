@@ -1,0 +1,25 @@
+{
+  "on_time_rate": 77.1,
+  "avg_delay_min": 124.9,
+  "sla_breach_rate": 22.9,
+  "total_deliveries": 43594,
+  "date_range": "2022-02-11 to 2022-04-06",
+  "model_accuracy": 85.9,
+  "model_f1_breach_class": 0.739,
+  "breach_by_area": {
+    "Metropolitan": 23.0,
+    "Other": 22.4,
+    "Semi-Urban": 25.0,
+    "Urban": 22.7
+  },
+  "weekly_breach_trend": [
+    19.2,
+    26.8,
+    22.4,
+    20.8,
+    25.5,
+    22.8,
+    20.7,
+    26.1
+  ]
+}
