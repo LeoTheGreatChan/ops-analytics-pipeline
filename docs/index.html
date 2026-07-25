@@ -145,99 +145,108 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+  // Auto-detect local vs deployed so this same file works during local testing
+  // (python app.py on 127.0.0.1:5000) and once deployed to GitHub Pages
+  // (pointing at the live Render API). Update the production URL once deployed.
+  const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:5000'
+    : 'https://ops-analytics-pipeline.onrender.com';
 
-const DATA = {
-  kpis: {"on_time_rate": 77.1, "avg_delay_min": 124.9, "sla_breach_rate": 22.9, "total_deliveries": 43594, "date_range": "2022-02-11 to 2022-04-06", "model_accuracy": 85.9, "model_f1_breach_class": 0.739, "breach_by_area": {"Metropolitan": 23.0, "Other": 22.4, "Semi-Urban": 25.0, "Urban": 22.7}, "weekly_breach_trend": [19.2, 26.8, 22.4, 20.8, 25.5, 22.8, 20.7, 26.1]},
-  segments: {"weather_breach_rate": {"Fog": 35.1, "Cloudy": 34.8, "Windy": 19.4, "Sandstorms": 19.2, "Stormy": 18.7, "Sunny": 9.6}, "segment_table": [{"segment": "Urban \u00b7 Jam traffic", "n": 2554, "avg_delay": 132, "breach_rate": 41.8, "risk": "High"}, {"segment": "Metropolitan \u00b7 Jam traffic", "n": 10749, "avg_delay": 151, "breach_rate": 40.0, "risk": "High"}, {"segment": "Other \u00b7 Jam traffic", "n": 281, "avg_delay": 119, "breach_rate": 35.9, "risk": "High"}, {"segment": "Other \u00b7 Medium traffic", "n": 251, "avg_delay": 111, "breach_rate": 28.3, "risk": "Moderate"}, {"segment": "Urban \u00b7 High traffic", "n": 914, "avg_delay": 115, "breach_rate": 28.2, "risk": "Moderate"}, {"segment": "Urban \u00b7 Medium traffic", "n": 2281, "avg_delay": 113, "breach_rate": 26.0, "risk": "Moderate"}, {"segment": "Metropolitan \u00b7 Medium traffic", "n": 8072, "avg_delay": 131, "breach_rate": 23.4, "risk": "Moderate"}, {"segment": "Metropolitan \u00b7 High traffic", "n": 3269, "avg_delay": 133, "breach_rate": 19.3, "risk": "Moderate"}, {"segment": "Other \u00b7 Low traffic", "n": 508, "avg_delay": 92, "breach_rate": 9.6, "risk": "Low"}, {"segment": "Urban \u00b7 Low traffic", "n": 3966, "avg_delay": 92, "breach_rate": 7.1, "risk": "Low"}]},
-  insights: {
-    customer_satisfaction: [{"rank": 1, "top_priority": true, "dimension": "Agent_Rating", "segment": "3.0-4.0", "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.", "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected", "n": 2298, "breach_rate": 64.1, "breach_lift_pct": 180.0}, {"rank": 2, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Fog + Jam", "finding": "Fog weather combined with Jam traffic shows a **174% higher** breach rate than average (62.7% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.", "impact": "estimated impact: -40pp breach rate \u00b7 2,364 deliveries/period affected", "n": 2364, "breach_rate": 62.7, "breach_lift_pct": 173.6}, {"rank": 3, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Cloudy + Jam", "finding": "Cloudy weather combined with Jam traffic shows a **170% higher** breach rate than average (61.8% vs 22.9% baseline). Add a **31% buffer** to delivery estimates for this combination.", "impact": "estimated impact: -39pp breach rate \u00b7 2,261 deliveries/period affected", "n": 2261, "breach_rate": 61.8, "breach_lift_pct": 169.9}, {"rank": 4, "top_priority": false, "dimension": "Traffic", "segment": "Jam", "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected", "n": 13710, "breach_rate": 40.1, "breach_lift_pct": 75.1}, {"rank": 5, "top_priority": false, "dimension": "Traffic", "segment": "Low", "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.", "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected", "n": 14976, "breach_rate": 6.7, "breach_lift_pct": -70.7}, {"rank": 6, "top_priority": false, "dimension": "Weather x Traffic", "segment": "Stormy + Low", "finding": "Stormy weather combined with Low traffic shows a **93% lower** breach rate than average (1.6% vs 22.9% baseline). No buffer adjustment needed; this combination consistently outperforms baseline.", "impact": "estimated impact: +21pp breach rate \u00b7 2,613 deliveries/period affected", "n": 2613, "breach_rate": 1.6, "breach_lift_pct": -93.0}],
-    cost_reduction: [{"rank": 1, "top_priority": true, "dimension": "Vehicle", "segment": "motorcycle", "finding": "Vehicle = motorcycle shows a **16% higher** breach rate than average (26.5% vs 22.9% baseline). Add a **58% buffer** for this segment.", "impact": "estimated impact: -4pp breach rate \u00b7 25,486 deliveries/period affected", "n": 25486, "breach_rate": 26.5, "breach_lift_pct": 15.6}, {"rank": 2, "top_priority": false, "dimension": "Agent_Rating", "segment": "4.5-4.8", "finding": "Agents rated **4.5-4.8** show a **37% lower** breach rate than average (14.4% vs 22.9% baseline). No action needed; this rating band performs at or above target.", "impact": "estimated impact: +9pp breach rate \u00b7 21,230 deliveries/period affected", "n": 21230, "breach_rate": 14.4, "breach_lift_pct": -37.2}, {"rank": 3, "top_priority": false, "dimension": "Traffic", "segment": "Low", "finding": "Traffic = Low shows a **71% lower** breach rate than average (6.7% vs 22.9% baseline). This segment consistently outperforms baseline; no action needed.", "impact": "estimated impact: +16pp breach rate \u00b7 14,976 deliveries/period affected", "n": 14976, "breach_rate": 6.7, "breach_lift_pct": -70.7}, {"rank": 4, "top_priority": false, "dimension": "Traffic", "segment": "Jam", "finding": "Traffic = Jam shows a **75% higher** breach rate than average (40.1% vs 22.9% baseline). Add a **47% buffer** for this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 13,710 deliveries/period affected", "n": 13710, "breach_rate": 40.1, "breach_lift_pct": 75.1}, {"rank": 5, "top_priority": false, "dimension": "Agent_Rating", "segment": "3.0-4.0", "finding": "Agents rated **3.0-4.0** show a **180% higher** breach rate than average (64.1% vs 22.9% baseline). Prioritise training or route reassignment for lower-rated agents.", "impact": "estimated impact: -41pp breach rate \u00b7 2,298 deliveries/period affected", "n": 2298, "breach_rate": 64.1, "breach_lift_pct": 180.0}, {"rank": 6, "top_priority": false, "dimension": "Area x Traffic", "segment": "Metropolitan + Jam", "finding": "Metropolitan deliveries during Jam traffic show a **75% higher** breach rate than average (40.0% vs 22.9% baseline). Add a **42% buffer** for routes in this segment.", "impact": "estimated impact: -17pp breach rate \u00b7 10,749 deliveries/period affected", "n": 10749, "breach_rate": 40.0, "breach_lift_pct": 74.5}]
-  },
-  forecast: {"weekday_breach_rate": {"Monday": 22.9, "Tuesday": 19.4, "Wednesday": 28.7, "Thursday": 18.5, "Friday": 24.5, "Saturday": 22.5, "Sunday": 22.9}, "holiday_vs_non_holiday": {"non_holiday": 22.9, "holiday": 23.7}, "holiday_note": "Only 2 public holidays fall within this dataset's 2022-02-11 to 2022-04-06 window (1 March 2022 (Maha Shivaratri), 18 March 2022 (Holi)), landing on Tuesdays and Fridays only. Holiday effect (23.7% vs 22.9% breach rate) is directional, not statistically robust given the small sample (1999 holiday-flagged rows).", "highest_risk_day": "Wednesday", "lowest_risk_day": "Thursday"}
-};
-
-</script>
-<script>
   const muted='#93927F', grid='#E7E6DF', good='#1D6B3E', neutral='#14140F', bad='#B23B2E';
   const tierColor = v => v > 20 ? bad : v < 10 ? good : neutral;
 
-  document.getElementById('provenance').innerHTML =
-    `DATASET: real, historical (Kaggle)<br>MODE: static analysis, not live<br>${DATA.kpis.date_range} &middot; ${DATA.kpis.total_deliveries.toLocaleString()} deliveries`;
-
-  // KPI cards
-  const k = DATA.kpis;
-  document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi"><p class="label">On-time rate</p><p class="value good">${k.on_time_rate}%</p><p class="delta">of all deliveries</p></div>
-    <div class="kpi"><p class="label">Avg delay</p><p class="value neutral">${Math.round(k.avg_delay_min)} min</p><p class="delta">mean delivery time</p></div>
-    <div class="kpi"><p class="label">SLA breach rate</p><p class="value bad">${k.sla_breach_rate}%</p><p class="delta">75th percentile threshold, per area</p></div>
-    <div class="kpi"><p class="label">Deliveries analysed</p><p class="value neutral">${k.total_deliveries.toLocaleString()}</p><p class="delta">${k.date_range}</p></div>
-  `;
-  document.getElementById('modelCaption').textContent =
-    `Delay-risk model: ${k.model_accuracy}% accuracy, ${k.model_f1_breach_class} F1 on breach class (87% recall, 64% precision, tuned to catch real breaches over minimising false alarms).`;
-
-  // Overview charts
-  const areaLabels = Object.keys(k.breach_by_area);
-  const areaVals = Object.values(k.breach_by_area);
-  new Chart(document.getElementById('areaChart'), {
-    type:'bar', data:{ labels:areaLabels, datasets:[{ data:areaVals, backgroundColor:areaVals.map(tierColor), borderRadius:4, maxBarThickness:44 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
-  });
-  new Chart(document.getElementById('trendChart'), {
-    type:'line', data:{ labels:k.weekly_breach_trend.map((_,i)=>'Week '+(i+1)),
-      datasets:[{ data:k.weekly_breach_trend, borderColor:neutral, backgroundColor:'rgba(20,20,15,0.06)', fill:true, tension:.35, pointRadius:0, borderWidth:2 }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
-  });
-
-  // Segments tab
-  const wLabels = Object.keys(DATA.segments.weather_breach_rate);
-  const wVals = Object.values(DATA.segments.weather_breach_rate);
-  new Chart(document.getElementById('weatherChart'), {
-    type:'bar', data:{ labels:wLabels, datasets:[{ data:wVals, backgroundColor:wVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
-  });
-  const segRows = DATA.segments.segment_table.map(r => `
-    <tr><td>${r.segment}</td><td class="num">${r.n.toLocaleString()}</td>
-    <td class="num ${r.avg_delay>140?'bad':''}">${r.avg_delay} min</td>
-    <td class="num ${r.breach_rate>30?'bad':r.breach_rate<10?'good':''}">${r.breach_rate}%</td>
-    <td><span class="pill ${r.risk}">${r.risk}</span></td></tr>`).join('');
-  document.getElementById('segTable').innerHTML = `
-    <thead><tr><th>Segment</th><th class="num">Deliveries</th><th class="num">Avg delay</th><th class="num">Breach rate</th><th>Risk</th></tr></thead>
-    <tbody>${segRows}</tbody>`;
-
-  // Insights tab
-  function renderInsights(objective) {
-    const list = DATA.insights[objective];
-    document.getElementById('insightsList').innerHTML = list.map(item => `
-      <div class="insight ${item.top_priority ? 'top' : ''}">
-        <p class="rank">#${item.rank} ${item.top_priority ? '<span class="badge-top">Top priority</span>' : ''}</p>
-        <p class="finding">${item.finding.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</p>
-        <p class="impact">${item.impact}</p>
-      </div>`).join('');
+  async function fetchJSON(path) {
+    const res = await fetch(`${API_BASE}${path}`);
+    if (!res.ok) throw new Error(`${path} returned ${res.status}`);
+    return res.json();
   }
-  document.getElementById('objective').addEventListener('change', e => renderInsights(e.target.value));
-  renderInsights('customer_satisfaction');
 
-  // Forecast tab
-  const f = DATA.forecast;
-  const wdLabels = Object.keys(f.weekday_breach_rate);
-  const wdVals = Object.values(f.weekday_breach_rate);
-  new Chart(document.getElementById('weekdayChart'), {
-    type:'bar', data:{ labels:wdLabels, datasets:[{ data:wdVals, backgroundColor:wdVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
-  });
-  new Chart(document.getElementById('holidayChart'), {
-    type:'bar', data:{ labels:['Non-holiday','Holiday'],
-      datasets:[{ data:[f.holiday_vs_non_holiday.non_holiday, f.holiday_vs_non_holiday.holiday], backgroundColor:[neutral, bad], borderRadius:4, maxBarThickness:60 }]},
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ x:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, y:{ticks:{color:muted}, grid:{display:false}} } }
-  });
-  document.getElementById('holidayNote').textContent = f.holiday_note;
+  function showError(message) {
+    document.querySelector('.wrap').insertAdjacentHTML('afterbegin', `
+      <div style="background:var(--bad-light); color:var(--bad); border-radius:var(--radius); padding:12px 16px; margin-bottom:1.5rem; font-size:13px;">
+        Could not load live data: ${message}. If testing locally, confirm the Flask API is running
+        (<code>python app.py</code> from the <code>api/</code> folder). If this is the deployed
+        version, the API may be cold-starting on Render's free tier, first load can take up to a minute.
+      </div>`);
+  }
 
-  // Tabs
+  function renderKPIs(k) {
+    document.getElementById('provenance').innerHTML =
+      `DATASET: real, historical (Kaggle)<br>MODE: static analysis, not live<br>${k.date_range} &middot; ${k.total_deliveries.toLocaleString()} deliveries`;
+    document.getElementById('kpiRow').innerHTML = `
+      <div class="kpi"><p class="label">On-time rate</p><p class="value good">${k.on_time_rate}%</p><p class="delta">of all deliveries</p></div>
+      <div class="kpi"><p class="label">Avg delay</p><p class="value neutral">${Math.round(k.avg_delay_min)} min</p><p class="delta">mean delivery time</p></div>
+      <div class="kpi"><p class="label">SLA breach rate</p><p class="value bad">${k.sla_breach_rate}%</p><p class="delta">75th percentile threshold, per area</p></div>
+      <div class="kpi"><p class="label">Deliveries analysed</p><p class="value neutral">${k.total_deliveries.toLocaleString()}</p><p class="delta">${k.date_range}</p></div>
+    `;
+    document.getElementById('modelCaption').textContent =
+      `Delay-risk model: ${k.model_accuracy}% accuracy, ${k.model_f1_breach_class} F1 on breach class (87% recall, 64% precision, tuned to catch real breaches over minimising false alarms).`;
+
+    const areaLabels = Object.keys(k.breach_by_area);
+    const areaVals = Object.values(k.breach_by_area);
+    new Chart(document.getElementById('areaChart'), {
+      type:'bar', data:{ labels:areaLabels, datasets:[{ data:areaVals, backgroundColor:areaVals.map(tierColor), borderRadius:4, maxBarThickness:44 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+    });
+    new Chart(document.getElementById('trendChart'), {
+      type:'line', data:{ labels:k.weekly_breach_trend.map((_,i)=>'Week '+(i+1)),
+        datasets:[{ data:k.weekly_breach_trend, borderColor:neutral, backgroundColor:'rgba(20,20,15,0.06)', fill:true, tension:.35, pointRadius:0, borderWidth:2 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+    });
+  }
+
+  function renderSegments(s) {
+    const wLabels = Object.keys(s.weather_breach_rate);
+    const wVals = Object.values(s.weather_breach_rate);
+    new Chart(document.getElementById('weatherChart'), {
+      type:'bar', data:{ labels:wLabels, datasets:[{ data:wVals, backgroundColor:wVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+    });
+    const segRows = s.segment_table.map(r => `
+      <tr><td>${r.segment}</td><td class="num">${r.n.toLocaleString()}</td>
+      <td class="num ${r.avg_delay>140?'bad':''}">${r.avg_delay} min</td>
+      <td class="num ${r.breach_rate>30?'bad':r.breach_rate<10?'good':''}">${r.breach_rate}%</td>
+      <td><span class="pill ${r.risk}">${r.risk}</span></td></tr>`).join('');
+    document.getElementById('segTable').innerHTML = `
+      <thead><tr><th>Segment</th><th class="num">Deliveries</th><th class="num">Avg delay</th><th class="num">Breach rate</th><th>Risk</th></tr></thead>
+      <tbody>${segRows}</tbody>`;
+  }
+
+  async function renderInsights(objective) {
+    document.getElementById('insightsList').innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Loading…</p>';
+    try {
+      const list = await fetchJSON(`/api/insights?objective=${objective}`);
+      document.getElementById('insightsList').innerHTML = list.map(item => `
+        <div class="insight ${item.top_priority ? 'top' : ''}">
+          <p class="rank">#${item.rank} ${item.top_priority ? '<span class="badge-top">Top priority</span>' : ''}</p>
+          <p class="finding">${item.finding.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</p>
+          <p class="impact">${item.impact}</p>
+        </div>`).join('');
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  function renderForecast(f) {
+    const wdLabels = Object.keys(f.weekday_breach_rate);
+    const wdVals = Object.values(f.weekday_breach_rate);
+    new Chart(document.getElementById('weekdayChart'), {
+      type:'bar', data:{ labels:wdLabels, datasets:[{ data:wdVals, backgroundColor:wdVals.map(tierColor), borderRadius:4, maxBarThickness:40 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ y:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, x:{ticks:{color:muted}, grid:{display:false}} } }
+    });
+    new Chart(document.getElementById('holidayChart'), {
+      type:'bar', data:{ labels:['Non-holiday','Holiday'],
+        datasets:[{ data:[f.holiday_vs_non_holiday.non_holiday, f.holiday_vs_non_holiday.holiday], backgroundColor:[neutral, bad], borderRadius:4, maxBarThickness:60 }]},
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{ x:{beginAtZero:true, ticks:{callback:v=>v+'%',color:muted}, grid:{color:grid}}, y:{ticks:{color:muted}, grid:{display:false}} } }
+    });
+    document.getElementById('holidayNote').textContent = f.holiday_note;
+  }
+
   document.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -246,6 +255,26 @@ const DATA = {
       document.getElementById(tab.dataset.tab).classList.add('active');
     });
   });
+
+  document.getElementById('objective').addEventListener('change', e => renderInsights(e.target.value));
+
+  async function init() {
+    try {
+      const [kpis, segments, forecast] = await Promise.all([
+        fetchJSON('/api/kpis'),
+        fetchJSON('/api/segments'),
+        fetchJSON('/api/forecast'),
+      ]);
+      renderKPIs(kpis);
+      renderSegments(segments);
+      renderForecast(forecast);
+      renderInsights('customer_satisfaction');
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  init();
 </script>
 </body>
 </html>
