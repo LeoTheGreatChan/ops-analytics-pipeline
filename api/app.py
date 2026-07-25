@@ -26,7 +26,6 @@ Deploy: Render, with ANTHROPIC_API_KEY set as an environment variable secret
 
 import os
 import sys
-import subprocess
 import json
 
 from flask import Flask, request, jsonify
@@ -37,6 +36,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 from drift_check import check_drift
 from change_detection import check_material_change
 from build_insights import build_all_findings, rank_top_segments, write_insights_json
+from feature_engineering import run_feature_engineering
+from insight_engine import run_insight_engine
+from build_remaining_data import build_remaining_data
 
 app = Flask(__name__)
 CORS(app)
@@ -96,26 +98,30 @@ def refresh():
     save_path = os.path.join(RAW_DIR, 'amazon_delivery.csv')
     file.save(save_path)
 
-    # Step 1: feature engineering
-    result = subprocess.run(
-        ['python3', os.path.join(SCRIPTS_DIR, 'feature_engineering.py')],
-        capture_output=True, text=True, cwd=SCRIPTS_DIR
-    )
-    if result.returncode != 0:
-        return jsonify({'error': 'feature engineering failed', 'detail': result.stderr}), 500
-
-    cleaned_df = pd.read_pickle(os.path.join(DATA_DIR, 'cleaned_data.pkl'))
+    # Step 1: feature engineering (in-process, not subprocess — see refactor
+    # notes in feature_engineering.py for why: subprocess was causing OOM
+    # on Render's free tier by loading pandas/numpy a second time)
+    try:
+        cleaned_df = run_feature_engineering(
+            csv_path=save_path,
+            output_path=os.path.join(DATA_DIR, 'cleaned_data.pkl'),
+            verbose=False
+        )
+    except Exception as e:
+        return jsonify({'error': 'feature engineering failed', 'detail': str(e)}), 500
 
     # Step 2: validate the fixed model against the new batch (no retraining)
     drift_result = check_drift(cleaned_df, model_path=os.path.join(DATA_DIR, 'model.pkl'))
 
     # Step 3: statistical insight scan on the new data
-    result = subprocess.run(
-        ['python3', os.path.join(SCRIPTS_DIR, 'insight_engine.py')],
-        capture_output=True, text=True, cwd=SCRIPTS_DIR
-    )
-    if result.returncode != 0:
-        return jsonify({'error': 'insight engine failed', 'detail': result.stderr}), 500
+    try:
+        run_insight_engine(
+            cleaned_data_path=os.path.join(DATA_DIR, 'cleaned_data.pkl'),
+            output_path=os.path.join(DATA_DIR, 'findings.pkl'),
+            verbose=False
+        )
+    except Exception as e:
+        return jsonify({'error': 'insight engine failed', 'detail': str(e)}), 500
 
     # Step 4: rank per objective
     all_findings, overall_breach = build_all_findings()
@@ -134,12 +140,15 @@ def refresh():
         writeup_action = 'skipped (no material change — prior write-up retained)'
 
     # Step 8: always refresh KPIs/segments/forecast (cheap, deterministic)
-    result = subprocess.run(
-        ['python3', os.path.join(SCRIPTS_DIR, 'build_remaining_data.py')],
-        capture_output=True, text=True, cwd=SCRIPTS_DIR
-    )
-    if result.returncode != 0:
-        return jsonify({'error': 'build_remaining_data failed', 'detail': result.stderr}), 500
+    try:
+        build_remaining_data(
+            cleaned_data_path=os.path.join(DATA_DIR, 'cleaned_data.pkl'),
+            model_path=os.path.join(DATA_DIR, 'model.pkl'),
+            output_dir=DATA_DIR,
+            verbose=False
+        )
+    except Exception as e:
+        return jsonify({'error': 'build_remaining_data failed', 'detail': str(e)}), 500
 
     return jsonify({
         'status': 'refreshed',
