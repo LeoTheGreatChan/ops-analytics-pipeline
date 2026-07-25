@@ -37,9 +37,18 @@
       "position": [20, 300],
       "parameters": {
         "method": "POST",
-        "url": "https://YOUR-RENDER-APP.onrender.com/api/refresh",
+        "url": "https://ops-analytics-pipeline.onrender.com/api/refresh",
         "sendBody": true,
         "contentType": "multipart-form-data",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Refresh-Key",
+              "value": "PASTE_YOUR_KEY_HERE_AFTER_IMPORT"
+            }
+          ]
+        },
         "bodyParameters": {
           "parameters": [
             {
