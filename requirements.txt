@@ -7,3 +7,4 @@ anthropic>=0.40
 # Phase 2 (API layer)
 flask>=3.0
 flask-cors>=4.0
+gunicorn>=21.0
