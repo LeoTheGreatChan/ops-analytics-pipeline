@@ -4,8 +4,8 @@
   "sla_breach_rate": 22.9,
   "total_deliveries": 43594,
   "date_range": "2022-02-11 to 2022-04-06",
-  "model_accuracy": 85.9,
-  "model_f1_breach_class": 0.739,
+  "model_accuracy": 85.8,
+  "model_f1_breach_class": 0.738,
   "breach_by_area": {
     "Metropolitan": 23.0,
     "Other": 22.4,

@@ -34,7 +34,18 @@ Sample size: {n} deliveries
 
 Write exactly two sentences in plain English:
 1. State the finding, bold the key percentage figures using **markdown**.
-2. Recommend one concrete action with a bolded number, or state no action is needed if the lift is negative (better than baseline).
+2. Recommend one concrete action. First decide what kind of factor this
+   dimension represents: an EXTERNAL CONDITION (weather, traffic, vehicle
+   type, geographic area, time, or a combination of these) that operations
+   cannot control but can plan around, versus an INTERNAL PERFORMANCE DRIVER
+   (something about the people, agents, or process carrying out the work)
+   that can be directly managed or improved. For external conditions, a
+   scheduling buffer is the appropriate action, use the bolded buffer
+   percentage provided above. For internal performance drivers, recommend
+   an operational response such as training, coaching, or reassignment
+   instead, a scheduling buffer does not address the actual cause. If the
+   lift is negative (this segment already outperforms baseline), state that
+   no action is needed rather than recommending either.
 
 Output only the two sentences, nothing else."""
 
