@@ -1,8 +1,7 @@
 # Predictive Operations Analytics Pipeline
 ### Statistical Insight Engine · Delay-Risk Model · Objective-Ranked Recommendations
 
-**Live Demo →** (pending Phase 2 deployment)
-**Source Code →** [github.com/LeoTheGreatChan/ops-analytics-pipeline](https://github.com/LeoTheGreatChan/ops-analytics-pipeline)
+**Live Demo →** [leothegreatchan.github.io/ops-analytics-pipeline/]([https://leothegreatchan.github.io/ops-analytics-pipeline/])
 
 ---
 
