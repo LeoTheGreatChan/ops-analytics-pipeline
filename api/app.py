@@ -37,8 +37,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 from drift_check import check_drift
 from change_detection import check_material_change
 from build_insights import build_all_findings, rank_top_segments, write_insights_json
-from dotenv import load_dotenv
-load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -82,6 +80,15 @@ def forecast():
 
 @app.route('/api/refresh', methods=['POST'])
 def refresh():
+    # Simple shared-secret check. This endpoint triggers real, billed LLM
+    # calls, so it cannot be left open on a public URL with public source
+    # code. Render sets REFRESH_API_KEY as an environment variable; n8n's
+    # HTTP Request node must send it as a header on every call.
+    expected_key = os.environ.get('REFRESH_API_KEY')
+    provided_key = request.headers.get('X-Refresh-Key')
+    if not expected_key or provided_key != expected_key:
+        return jsonify({'error': 'unauthorized'}), 401
+
     if 'file' not in request.files:
         return jsonify({'error': 'no file uploaded (expected multipart form field "file")'}), 400
 
