@@ -1,0 +1,129 @@
+{
+  "name": "Ops Analytics Pipeline - Refresh & Alert",
+  "nodes": [
+    {
+      "id": "manual-trigger-1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-200, 200],
+      "parameters": {}
+    },
+    {
+      "id": "schedule-trigger-1",
+      "name": "Schedule Trigger (Weekly)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 400],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [1],
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "notes": "Fires weekly, Monday 6am. Adjust cadence in the interval field to match how often the client actually receives new data."
+    },
+    {
+      "id": "http-refresh-1",
+      "name": "Call /api/refresh",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-RENDER-APP.onrender.com/api/refresh",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "notes": "Replace YOUR-RENDER-APP with the actual deployed Render URL once live. Timeout set to 120s since Render's free tier can cold-start (30-60s) before the pipeline itself even runs."
+    },
+    {
+      "id": "if-alert-1",
+      "name": "Alert recommended?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [240, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue": "={{ $json.alert_recommended }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "notes": "True branch fires when EITHER change_detection.material_change OR drift_check.drift_detected is true — same compound-condition pattern as the sentiment pipeline's IF node."
+    },
+    {
+      "id": "alert-notify-1",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [460, 200],
+      "parameters": {
+        "subject": "Ops Analytics: refresh flagged for review",
+        "text": "=Refresh completed with a flag.\n\nChange detection: {{ $json.change_detection.reason }}\nDrift check: {{ $json.drift_check.message }}\n\nReview the updated dashboard before relying on the new insights."
+      },
+      "notes": "Swap for a Slack node if preferred — same pattern as the sentiment pipeline's Gmail alert node. Configure sender/recipient credentials before running."
+    },
+    {
+      "id": "no-alert-1",
+      "name": "No Action Needed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [460, 400],
+      "parameters": {},
+      "notes": "Refresh completed silently — no material change and no model drift. This is the expected outcome on most runs."
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Call /api/refresh", "type": "main", "index": 0 }]]
+    },
+    "Schedule Trigger (Weekly)": {
+      "main": [[{ "node": "Call /api/refresh", "type": "main", "index": 0 }]]
+    },
+    "Call /api/refresh": {
+      "main": [[{ "node": "Alert recommended?", "type": "main", "index": 0 }]]
+    },
+    "Alert recommended?": {
+      "main": [
+        [{ "node": "Send Alert", "type": "main", "index": 0 }],
+        [{ "node": "No Action Needed", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "meta": {
+    "description": "Dual-trigger refresh workflow: Manual Trigger for on-demand runs, Schedule Trigger for automatic weekly refreshes. Both feed the same downstream chain, so there is exactly one refresh logic path to maintain, not two. The Flask API's /api/refresh endpoint does the actual work (feature engineering, drift check, insight ranking, conditional LLM write-up); this workflow's only job is triggering it and routing the result to an alert or not."
+  }
+}

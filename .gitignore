@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pkl
+.venv/
+venv/
+
+# Environment / secrets
+.env
+*.env
+
+# OS
+.DS_Store
+
+# Raw dataset (third-party, not redistributed — see data/raw/README.md)
+data/raw/*.csv
+
+# Runtime-generated state (regenerated on every /api/refresh, not fixed input)
+data/processed/findings_prior_snapshot.json
+
+# Editor
+.vscode/

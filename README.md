@@ -1,7 +1,8 @@
 # Predictive Operations Analytics Pipeline
 ### Statistical Insight Engine · Delay-Risk Model · Objective-Ranked Recommendations
 
-**Live Demo →** [leothegreatchan.github.io/ops-analytics-pipeline/](https://leothegreatchan.github.io/ops-analytics-pipeline/)
+**Live Demo →** [leothegreatchan.github.io/ops-analytics-pipeline](https://leothegreatchan.github.io/ops-analytics-pipeline/)
+**Source Code →** [github.com/LeoTheGreatChan/ops-analytics-pipeline](https://github.com/LeoTheGreatChan/ops-analytics-pipeline)
 
 ---
 
@@ -53,6 +54,26 @@ This section exists because catching problems in the data is as much a part of t
 
 ---
 
+---
+
+## Phase 2: Automated Refresh Pipeline
+
+The pipeline above runs once against a static file. Phase 2 makes it re-runnable against new data of the same structure, without re-doing the design decisions each time.
+
+**Trigger:** n8n workflow (`n8n_workflow.json`) with two trigger nodes, Manual (on-demand) and Schedule (weekly), both feeding the same downstream chain, so there is one refresh logic path to maintain, not two.
+
+**Orchestration (`api/app.py`, `/api/refresh`):**
+1. Clean the new CSV (`feature_engineering.py`)
+2. **Validate, don't retrain** — the existing model is checked against the new batch's real outcomes (`drift_check.py`), producing genuine accuracy/F1 numbers, not an estimate. Retraining is flagged as a recommendation for human review, not triggered automatically; a single new batch retraining a tree ensemble each run risks instability that a deliberate, reviewed retrain avoids.
+3. Re-scan segments (`insight_engine.py`) and re-rank both objectives
+4. **Check for material change** (`change_detection.py`) — compares the new findings against a saved snapshot of the prior run. Material change is defined as either a >5 percentage-point shift in any segment's breach-rate lift, or a change in which segment ranks #1 under either objective.
+5. **Conditional LLM write-up** — the insight text is only regenerated (real Claude API call, `llm_insight_writer.py`) when step 4 detects material change. Verified in testing: an identical re-run correctly produces a 0.0pp shift and skips the LLM call entirely, so a stable operation costs nothing on most refreshes, this is the mechanism, not just an intention.
+6. n8n reads the response's `alert_recommended` flag (true if either material change or model drift was detected) and routes to an email/Slack alert or does nothing, same compound-condition IF-node pattern as the sentiment pipeline's triage logic.
+
+**Why the LLM call is now real, not templated:** an earlier draft of this project used a Python template function to generate insight text, close enough to an LLM's output that it initially got described as one in this README. That was a real discrepancy against the project's own accuracy standard, caught and corrected: `llm_insight_writer.py` now calls the Claude API directly (Claude Haiku, a short templated completion doesn't need a larger model). A template fallback still exists for cost-free local development when no API key is set, printing an explicit warning so it's never silently mistaken for the real thing.
+
+---
+
 ## What's ML, What's Statistics, and What's an LLM Writing It Up
 
 Being precise about this distinction is itself part of the deliverable:
@@ -74,10 +95,11 @@ Being precise about this distinction is itself part of the deliverable:
 | Data processing | Python, Pandas, NumPy |
 | Modelling | scikit-learn (Random Forest) |
 | Statistics | SciPy, Pandas |
-| Insight generation | LLM API call (batch, precomputed — not per-request) |
-| API (Phase 2) | Flask, Flask-CORS |
+| Insight generation | Claude API (Haiku), called conditionally, not per request |
+| Refresh orchestration | n8n (dual trigger: Manual + Schedule), Flask |
+| API | Flask, Flask-CORS |
 | Frontend | HTML, CSS, Chart.js |
-| Hosting (planned) | GitHub Pages (frontend) + Render (API) |
+| Hosting | GitHub Pages (frontend) + Render (API) |
 
 ---
 
@@ -87,7 +109,7 @@ Being precise about this distinction is itself part of the deliverable:
 
 **Why a relative SLA threshold instead of a fixed one?** The dataset has no pre-labelled "late" flag. A fixed threshold (e.g. "over 150 minutes is late") would be an arbitrary number invented for this project. A relative threshold, the 75th percentile of delivery time within each area, is data-derived and defensible under questioning.
 
-**Why keep n8n out of the core pipeline?** n8n's role here is orchestration (scheduled refresh, alert routing), not analysis. The actual value of this project, statistical rigour, model validation, business-aware ranking, lives entirely in the Python layer. Leading with n8n would blur this project's positioning with the author's separate [sentiment analysis pipeline](https://github.com/LeoTheGreatChan/saas-sentiment-analyzer), which is genuinely n8n-centric. n8n is planned for Phase 2 as a scheduled refresh and alert layer only.
+**Why keep n8n out of the core statistical/ML pipeline, but use it for refresh orchestration?** The actual analytical value of this project, statistical rigour, model validation, business-aware ranking, lives entirely in the Python layer, not in n8n. That distinction matters for positioning against the author's separate [sentiment analysis pipeline](https://github.com/LeoTheGreatChan/saas-sentiment-analyzer), which is genuinely n8n-centric. In Phase 2, n8n's role stays narrow and correct to what orchestration tools are for: triggering a refresh and routing an alert, never touching the statistics, model, or write-up logic itself.
 
 ---
 
@@ -109,10 +131,10 @@ Being precise about this distinction is itself part of the deliverable:
 
 ## Extension Opportunities
 
-- **Live API layer** (Phase 2, in progress) — Flask endpoints replacing the inline data currently embedded in the frontend
-- **n8n refresh/alert layer** (Phase 2) — scheduled reruns and Slack/email alerts for newly high-risk segments
+- **Deployment** — Flask API to Render, n8n workflow imported and pointed at the live URL (built, pending deployment)
 - **Second dataset partner** — extending the pipeline to a multi-carrier delivery dataset to test whether findings generalise
 - **Time-series forecasting** — a proper Prophet or seasonal-decomposition model for the Risk Forecast tab, beyond the current pattern-based aggregation
+- **Automated retraining pipeline** — currently retraining is a flagged, human-reviewed decision (see Phase 2); a supervised auto-retrain path could be added once enough refresh history exists to trust it
 
 ---
 
