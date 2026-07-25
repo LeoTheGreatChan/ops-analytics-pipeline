@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 *.pkl
+!data/processed/model.pkl
 .venv/
 venv/
 
