@@ -2,7 +2,6 @@
 __pycache__/
 *.pyc
 *.pkl
-!data/processed/model.pkl
 .venv/
 venv/
 
@@ -16,8 +15,11 @@ venv/
 # Raw dataset (third-party, not redistributed — see data/raw/README.md)
 data/raw/*.csv
 
-# Runtime-generated state (regenerated on every /api/refresh, not fixed input)
-data/processed/findings_prior_snapshot.json
+# Note: data/processed/findings_prior_snapshot.json is intentionally NOT
+# gitignored. It's committed programmatically via scripts/github_commit.py
+# whenever a refresh finds a material change, this is what lets the
+# change-detection gate survive Render's ephemeral filesystem across cold
+# starts. See github_commit.py for the full reasoning.
 
 # Editor
 .vscode/

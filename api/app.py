@@ -39,6 +39,7 @@ from build_insights import build_all_findings, rank_top_segments, write_insights
 from feature_engineering import run_feature_engineering
 from insight_engine import run_insight_engine
 from build_remaining_data import build_remaining_data
+from github_commit import commit_updated_data_to_github
 
 app = Flask(__name__)
 CORS(app)
@@ -150,12 +151,30 @@ def refresh():
     except Exception as e:
         return jsonify({'error': 'build_remaining_data failed', 'detail': str(e)}), 500
 
+    # Step 9: persist across Render's ephemeral filesystem, GitHub-side.
+    # Only commit when something actually changed — most refreshes find
+    # nothing material and should stay silent, not spam the repo history.
+    # Render auto-deploys on push, so the next cold start boots with this
+    # data already baked in rather than reverting to whatever was last
+    # manually committed.
+    github_commit_status = 'skipped (no material change)'
+    if change_result['material_change']:
+        try:
+            commit_updated_data_to_github(DATA_DIR, reason=change_result['reason'])
+            github_commit_status = 'committed'
+        except Exception as e:
+            # Don't fail the whole refresh over a GitHub API hiccup — the
+            # refresh itself succeeded, only the persistence step failed.
+            # Surface it in the response so it's visible, not silent.
+            github_commit_status = f'failed: {str(e)}'
+
     return jsonify({
         'status': 'refreshed',
         'rows_processed': len(cleaned_df),
         'drift_check': drift_result,
         'change_detection': change_result,
         'insight_writeup': writeup_action,
+        'github_commit': github_commit_status,
         'alert_recommended': change_result['material_change'] or drift_result['drift_detected']
     })
 
