@@ -54,6 +54,16 @@ This section exists because catching problems in the data is as much a part of t
 
 ---
 
+**n8n refresh workflow:**
+
+![n8n workflow — dual triggers feeding a single refresh path](./assets/n8n_workflow_overview.png)
+
+Two trigger nodes (Manual, for on-demand runs, and Schedule, weekly) both feed the same downstream chain, one refresh logic path to maintain, not two.
+
+![n8n IF node — compound alert condition](./assets/n8n_if_node.png)
+
+The "Alert recommended?" node branches on `{{ $json.alert_recommended }}`, a real field from the API response reflecting either material change or model drift, not a placeholder condition.
+
 ---
 
 ## Phase 2: Automated Refresh Pipeline
@@ -71,6 +81,8 @@ The pipeline above runs once against a static file. Phase 2 makes it re-runnable
 6. n8n reads the response's `alert_recommended` flag (true if either material change or model drift was detected) and routes to an email/Slack alert or does nothing, same compound-condition IF-node pattern as the sentiment pipeline's triage logic.
 
 **Why the LLM call is now real, not templated:** an earlier draft of this project used a Python template function to generate insight text, close enough to an LLM's output that it initially got described as one in this README. That was a real discrepancy against the project's own accuracy standard, caught and corrected: `llm_insight_writer.py` now calls the Claude API directly (Claude Haiku, a short templated completion doesn't need a larger model). A template fallback still exists for cost-free local development when no API key is set, printing an explicit warning so it's never silently mistaken for the real thing.
+
+**Persisting across Render's ephemeral filesystem.** Render's free tier boots a fresh container on every cold start, discarding anything written to disk at runtime. In testing, this meant the change-detection snapshot and the refreshed data files were silently lost between refreshes, every cold-started run looked like a "first run," regardless of what had actually happened before. The fix: `scripts/github_commit.py` pushes the six updated data files straight back to GitHub via the Contents API, but only when a refresh finds a material change, not on every run. Since Render auto-deploys on every push to `main`, the next cold start boots from a container that already has this data baked in, git itself becomes the durable store, with no separate database or persistence layer needed. Verified in production: a refresh correctly committed (`github_commit: "committed"`) and triggered a real Render redeploy on its own, and a repeat refresh against unchanged data correctly stayed silent (`github_commit: "skipped (no material change)"`), confirming the gate discriminates genuinely new findings from repeated ones, not just in a single session but across an actual deploy cycle.
 
 ---
 
