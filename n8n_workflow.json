@@ -2,53 +2,46 @@
   "name": "Ops Analytics Pipeline - Refresh & Alert",
   "nodes": [
     {
-      "id": "manual-trigger-1",
+      "parameters": {},
+      "id": "897e95f9-f08d-440c-a26f-bfe08e2bcf69",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [-200, 200],
-      "parameters": {}
+      "position": [
+        -176,
+        0
+      ]
     },
     {
-      "id": "schedule-trigger-1",
-      "name": "Schedule Trigger (Weekly)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [-200, 400],
       "parameters": {
         "rule": {
           "interval": [
             {
               "field": "weeks",
-              "weeksInterval": 1,
-              "triggerAtDay": [1],
-              "triggerAtHour": 6
+              "triggerAtHour": 10,
+              "triggerAtMinute": 6
             }
           ]
         }
       },
+      "id": "d48f86f3-b775-4440-b07a-37337aa1bd07",
+      "name": "Schedule Trigger (Weekly)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        176
+      ],
       "notes": "Fires weekly, Monday 6am. Adjust cadence in the interval field to match how often the client actually receives new data."
     },
     {
-      "id": "http-refresh-1",
-      "name": "Call /api/refresh",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [20, 300],
       "parameters": {
         "method": "POST",
         "url": "https://ops-analytics-pipeline.onrender.com/api/refresh",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "contentType": "multipart-form-data",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Refresh-Key",
-              "value": "PASTE_YOUR_KEY_HERE_AFTER_IMPORT"
-            }
-          ]
-        },
         "bodyParameters": {
           "parameters": [
             {
@@ -62,20 +55,30 @@
           "timeout": 120000
         }
       },
+      "id": "e1a63b5f-3109-4032-a6f7-9738469b1873",
+      "name": "Call /api/refresh",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VIgBYPnPsq1vgLwJ",
+          "name": "Header Auth account"
+        }
+      },
       "notes": "Replace YOUR-RENDER-APP with the actual deployed Render URL once live. Timeout set to 120s since Render's free tier can cold-start (30-60s) before the pipeline itself even runs."
     },
     {
-      "id": "if-alert-1",
-      "name": "Alert recommended?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [240, 300],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 2
           },
           "conditions": [
             {
@@ -89,50 +92,150 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
+      "id": "28f0440e-66da-48b6-ae64-e0cca31a97f6",
+      "name": "Alert recommended?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        112
+      ],
       "notes": "True branch fires when EITHER change_detection.material_change OR drift_check.drift_detected is true — same compound-condition pattern as the sentiment pipeline's IF node."
     },
     {
-      "id": "alert-notify-1",
+      "parameters": {
+        "fromEmail": "leo+n8n@createch.com.hk",
+        "toEmail": "leo@chanfamily.uk",
+        "subject": "Ops Analytics: refresh flagged for review",
+        "options": {}
+      },
+      "id": "a87659cd-1aa9-4d6a-a23d-a742710b7371",
       "name": "Send Alert",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [460, 200],
-      "parameters": {
-        "subject": "Ops Analytics: refresh flagged for review",
-        "text": "=Refresh completed with a flag.\n\nChange detection: {{ $json.change_detection.reason }}\nDrift check: {{ $json.drift_check.message }}\n\nReview the updated dashboard before relying on the new insights."
+      "position": [
+        672,
+        0
+      ],
+      "webhookId": "f4ac8b10-6425-41ad-9496-825552109c4a",
+      "credentials": {
+        "smtp": {
+          "id": "x2IZ6PJUKATACSDz",
+          "name": "SMTP account"
+        }
       },
+      "disabled": true,
       "notes": "Swap for a Slack node if preferred — same pattern as the sentiment pipeline's Gmail alert node. Configure sender/recipient credentials before running."
     },
     {
-      "id": "no-alert-1",
+      "parameters": {},
+      "id": "80de0074-992b-4e5f-87d3-5f3702578609",
       "name": "No Action Needed",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [460, 400],
-      "parameters": {},
+      "position": [
+        672,
+        208
+      ],
       "notes": "Refresh completed silently — no material change and no model drift. This is the expected outcome on most runs."
+    },
+    {
+      "parameters": {
+        "fileSelector": "G:\\My Drive\\Leo's doc\\Career\\Portfolio\\AI\\Predictive operations analytics\\ops-analytics-pipeline\\data\\raw\\amazon_delivery.csv",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        112
+      ],
+      "id": "e01b36d1-5c95-4a19-874d-5a10f852f478",
+      "name": "Read/Write Files from Disk"
     }
   ],
+  "pinData": {},
   "connections": {
     "Manual Trigger": {
-      "main": [[{ "node": "Call /api/refresh", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Schedule Trigger (Weekly)": {
-      "main": [[{ "node": "Call /api/refresh", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Call /api/refresh": {
-      "main": [[{ "node": "Alert recommended?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Alert recommended?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Alert recommended?": {
       "main": [
-        [{ "node": "Send Alert", "type": "main", "index": 0 }],
-        [{ "node": "No Action Needed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Action Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Call /api/refresh",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f7952a21-be85-4787-ac02-25e2c3bb1e5d",
   "meta": {
-    "description": "Dual-trigger refresh workflow: Manual Trigger for on-demand runs, Schedule Trigger for automatic weekly refreshes. Both feed the same downstream chain, so there is exactly one refresh logic path to maintain, not two. The Flask API's /api/refresh endpoint does the actual work (feature engineering, drift check, insight ranking, conditional LLM write-up); this workflow's only job is triggering it and routing the result to an alert or not."
-  }
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1e88d306eb5e13a531311784d816167f9f4e315ac4449c4f1b2eee9d55327a75"
+  },
+  "nodeGroups": [],
+  "id": "aONQ4lEZKEaqIniV",
+  "tags": []
 }
