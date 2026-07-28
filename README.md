@@ -1,8 +1,8 @@
 # Predictive Operations Analytics Pipeline
 ### Statistical Insight Engine · Delay-Risk Model · Objective-Ranked Recommendations
 
-**Live Demo → [leothegreatchan.github.io/ops-analytics-pipeline](https://leothegreatchan.github.io/ops-analytics-pipeline/)**  
-**Source Code → [github.com/LeoTheGreatChan/ops-analytics-pipeline](https://github.com/LeoTheGreatChan/ops-analytics-pipeline)**
+**Live Demo →** [leothegreatchan.github.io/ops-analytics-pipeline](https://leothegreatchan.github.io/ops-analytics-pipeline/)  
+**Source Code →** [github.com/LeoTheGreatChan/ops-analytics-pipeline](https://github.com/LeoTheGreatChan/ops-analytics-pipeline)
 
 ---
 
@@ -143,10 +143,10 @@ Being precise about this distinction is itself part of the deliverable:
 
 ## Extension Opportunities
 
-- **Deployment** — Flask API to Render, n8n workflow imported and pointed at the live URL (built, pending deployment)
 - **Second dataset partner** — extending the pipeline to a multi-carrier delivery dataset to test whether findings generalise
 - **Time-series forecasting** — a proper Prophet or seasonal-decomposition model for the Risk Forecast tab, beyond the current pattern-based aggregation
 - **Automated retraining pipeline** — currently retraining is a flagged, human-reviewed decision (see Phase 2); a supervised auto-retrain path could be added once enough refresh history exists to trust it
+- **Real-time alert delivery** — the n8n workflow's Send Alert node is built but not yet wired to live email/Slack credentials
 
 ---
 
