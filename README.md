@@ -4,6 +4,8 @@
 **Live Demo →** [leothegreatchan.github.io/ops-analytics-pipeline](https://leothegreatchan.github.io/ops-analytics-pipeline/)  
 **Source Code →** [github.com/LeoTheGreatChan/ops-analytics-pipeline](https://github.com/LeoTheGreatChan/ops-analytics-pipeline)
 
+*Part of a three-project portfolio built on the same discipline: start from a real operational problem, decide deliberately where AI is trusted and where control stays in deterministic code, then test, verify, and measure whether it actually worked. [saas-sentiment-analyzer](https://github.com/LeoTheGreatChan/saas-sentiment-analyzer) applies it to live app-store review triage with a fine-tuned BERT scorer; [complaint-triage-orchestrator](https://github.com/LeoTheGreatChan/complaint-triage-orchestrator) applies it to a four-agent compliance workflow behind a deterministic escalation gate. Full portfolio: [github.com/LeoTheGreatChan](https://github.com/LeoTheGreatChan).*
+
 ---
 
 ## The Problem
