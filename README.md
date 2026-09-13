@@ -42,6 +42,40 @@ This section exists because catching problems in the data is as much a part of t
 
 ## Pipeline Architecture
 
+```mermaid
+flowchart TD
+    RAW["Amazon Delivery Dataset<br/>43,739 rows"] --> FE
+
+    subgraph BATCH["Batch Pipeline — computed once, served as static JSON"]
+        direction TB
+        FE["① Feature Engineering<br/>Distance_km, SLA_Breach, time bands"] --> STAT["② Statistical Insight Engine<br/>segment scan + effect-size filter"]
+        FE --> MODEL["③ Predictive Model<br/>Random Forest, 85.9% accuracy"]
+        MODEL -.->|feature importances cross-checked| STAT
+        STAT --> RANK["④ Business-Value Ranking<br/>Customer Satisfaction vs Cost Reduction"]
+        RANK --> WRITE["⑤ Insight Write-up<br/>Claude API (Haiku)"]
+        WRITE --> DASH["⑥ Dashboard<br/>4 tabs, objective toggle"]
+    end
+
+    subgraph REFRESH["Phase 2 — Automated Refresh (n8n)"]
+        direction TB
+        TRIG(["Manual or Schedule Trigger"]) --> CLEAN["Clean new CSV"]
+        CLEAN --> DRIFT["Validate model against<br/>new outcomes (drift_check.py)"]
+        DRIFT --> RESCAN["Re-scan segments,<br/>re-rank both objectives"]
+        RESCAN --> CHANGE{"Material change?<br/>&gt;5pp shift or new #1"}
+        CHANGE -->|yes| REGEN["Regenerate write-up<br/>— real Claude call"]
+        CHANGE -->|no| SKIP["Skip LLM call<br/>— costs nothing"]
+        REGEN --> COMMIT["Commit updated data<br/>to GitHub"]
+        COMMIT --> GATE{"alert_recommended?"}
+        SKIP --> GATE
+        DRIFT -.->|model drift signal| GATE
+        COMMIT -.->|push to main| REDEPLOY["Render auto-redeploy"]
+        GATE -->|material change or model drift| ALERT["Email / Slack Alert"]
+        GATE -->|clean| NOOP["No action"]
+    end
+
+    DASH -.->|new data arrives| TRIG
+```
+
 **① Feature engineering** — `Distance_km` (haversine from store/drop coordinates, nulled for bad geocodes), `Weekday`, `Is_Weekend`, `Is_Holiday` (India public holiday calendar), `Order_Hour` bucketed into time-of-day bands, `SLA_Breach` flag (relative threshold: 75th percentile of delivery time, computed per Area rather than a fixed arbitrary cutoff).
 
 **② Statistical insight engine** — scans single and compound segments (Area, Weather, Traffic, Vehicle, Weekday, Area×Traffic, Weather×Traffic, Agent Rating bands), filters to segments with a minimum sample size (200 rows) and a meaningful effect size (±15% breach-rate lift vs baseline), and computes a numeric buffer suggestion per segment from the 90th-percentile-vs-median delivery time gap.
